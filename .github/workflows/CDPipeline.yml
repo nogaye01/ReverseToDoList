@@ -55,6 +55,7 @@ jobs:
 
   # Job to build, test and deploy for the main branch
   build_and_deploy_main:
+    needs: build_and_test
     runs-on: ubuntu-latest
     
     steps:
