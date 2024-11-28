@@ -92,7 +92,7 @@ jobs:
       run: |
         cd e2e-tests
         npm install
-        npm run test
+        npx mocha test.js
 
     - name: Build Docker images using docker-compose
       run: |
