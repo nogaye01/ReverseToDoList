@@ -95,7 +95,7 @@ jobs:
     - name: Run E2E tests
       run: |
         cd e2e-tests
-        docker-compose up
+        docker-compose up --build -d
         npm test
         docker-compse down
 
