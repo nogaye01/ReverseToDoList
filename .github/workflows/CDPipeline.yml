@@ -68,21 +68,15 @@ jobs:
 
       #  Build and Test with Docker Compose
       - name: Build and Test with Docker Compose
+        working-directory: ./e2e-tests
         run: |
           docker-compose up --build -d
           sleep 10 # Wait for services to initialize
-          cd e2e-tests
           npm install
           npm test
           docker-compose down
 
-      # Build and Test with Docker Compose
-      - name: Build and Test with Docker Compose
-        run: |
-          docker-compose up --build -d
-          sleep 10 # Wait for services to initialize
-          npm run e2e # Replace with actual e2e test command
-          docker-compose down
+
 
       # Build and Push Docker Images
       - name: Login to Docker Hub
