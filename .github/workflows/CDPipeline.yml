@@ -10,7 +10,7 @@ on:
       -dev
   
 jobs:
-  # Job to build and test (for both dev and main branches)
+  # Job to build and test
   build_and_test:
     runs-on: ubuntu-latest
     
