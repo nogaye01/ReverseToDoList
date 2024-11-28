@@ -11,8 +11,7 @@ on:
 
 jobs:
   # Job for handling merge into dev branch
-  build-and-test-on-dev:
-    if: github.ref == 'refs/heads/dev' && github.event.head_commit.message != 'Merge dev into main'
+  build-and-test:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
@@ -56,7 +55,7 @@ jobs:
   # Job for handling merge into main branch
   build-test-and-deploy-on-main:
     if: github.ref == 'refs/heads/main'
-    needs: build-and-test-on-dev  # Ensures this job runs after build-and-test-on-dev
+    needs: build-and-test  # Ensures this job runs after build-and-test
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
