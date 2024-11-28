@@ -54,7 +54,7 @@ jobs:
   e2e-and-deploy:
     name: E2E Test and Deploy
     needs: build-and-test
-    if: github.ref == 'refs/heads/main' && success()
+    if: github.ref == 'refs/heads/main' || github.event.pull_request.base.ref == 'dev' && success()
     runs-on: ubuntu-latest
     steps:
       #  Checkout the code
