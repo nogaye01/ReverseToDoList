@@ -7,18 +7,18 @@ on:
       - main
   pull_request:
     branches:
-      -dev
-  
+      - dev
+
 jobs:
-  # Job to build and test
-  build_and_test:
+  # Job to build and test when dev branch changes
+  build_and_test_dev:
     runs-on: ubuntu-latest
     
     steps:
     - name: Checkout code
       uses: actions/checkout@v3
 
-    - name: Set up Node.js for frontend and backend
+    - name: Set up Node.js
       uses: actions/setup-node@v3
       with:
         node-version: '18'  
@@ -42,27 +42,25 @@ jobs:
       run: |
         cd backend
         npm test
-        
+
     - name: Merge dev to main (if tests pass)
       if: success()
-      run: |
-        git fetch origin dev
-        git config --global user.name "github-actions"
-        git config --global user.email "github-actions@github.com"
-        git checkout main
-        git merge origin/dev --allow-unrelated-histories || echo "Merge conflict detected, manual resolution required." && exit 1
-        git push origin main
+      uses: dev-drprasad/delete-merged-branch@v3.0.0
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        branch_name: dev
+        target_branch: main
 
-  # Job to build, test and deploy for the main branch
-  build_and_deploy_main:
-    needs: build_and_test
+  # Job to build, test, and deploy when main branch changes
+  build_test_deploy_main:
+    needs: build_and_test_dev
     runs-on: ubuntu-latest
     
     steps:
     - name: Checkout code
       uses: actions/checkout@v3
 
-    - name: Set up Node.js for frontend and backend
+    - name: Set up Node.js
       uses: actions/setup-node@v3
       with:
         node-version: '18'  
@@ -93,11 +91,14 @@ jobs:
         npm install
         npm run test
 
-    - name: Build Docker images using docker-compose
+    - name: Build Docker images
       run: |
         docker-compose -f docker-compose.yml build
 
     - name: Push Docker images to Docker Hub
+      env:
+        DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+        DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
       run: |
-        docker login -u ${{ secrets.DOCKER_USERNAME }} -p ${{ secrets.DOCKER_PASSWORD }}
+        echo $DOCKER_PASSWORD | docker login -u $DOCKER_USERNAME --password-stdin
         docker-compose -f docker-compose.yml push
