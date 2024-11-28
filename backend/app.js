@@ -7,7 +7,7 @@ const app = express();
 //adding a comment
 app.use(cors());
 app.use(express.json());
-
+//making changes 
 const mongoURI = process.env.MONGO_URL || "mongodb+srv://diengnogs:passer@cluster0.yircjsf.mongodb.net/";
 mongoose.connect(mongoURI, {
     useNewUrlParser: true,
