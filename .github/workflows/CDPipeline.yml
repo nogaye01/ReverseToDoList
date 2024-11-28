@@ -66,7 +66,7 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y docker-compose
 
-      #  Build and Test with Docker Compose
+      #   Build and Test with Docker Compose
       - name: Build and Test with Docker Compose
         working-directory: ./e2e-tests
         run: |
