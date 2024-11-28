@@ -1,111 +1,93 @@
-name: CI/CD Pipeline
+name: CI/CD Automation
 
 on:
   push:
     branches:
       - dev
       - main
-  pull_request:
+    pull_requests:
       branches:
-      - dev
+        -dev
+  
 
 jobs:
-  # Job for handling merge into dev branch
-  build-and-test:
+  # Job to build and test (for both dev and main branches)
+  build_and_test:
     runs-on: ubuntu-latest
+    
     steps:
-      - name: Checkout Code
-        uses: actions/checkout@v3
+    - name: Checkout code
+      uses: actions/checkout@v3
 
-      - name: Set up Node.js
-        uses: actions/setup-node@v3
-        with:
-          node-version: '18'  # Specify the Node.js version
+    - name: Set up Node.js for frontend and backend
+      uses: actions/setup-node@v3
+      with:
+        node-version: '16'  # or specify the version you need
 
-      - name: Install Dependencies - Backend
-        working-directory: ./backend
-        run: |
-          npm install
+    - name: Install frontend dependencies
+      run: |
+        cd frontend
+        npm install
+    
+    - name: Install backend dependencies
+      run: |
+        cd backend
+        npm install
 
-      - name: Install Dependencies - Frontend
-        working-directory: ./frontend
-        run: |
-          npm install
+    - name: Run unit tests for frontend
+      run: |
+        cd frontend
+        npm test
 
-      - name: Run Unit Tests - Backend
-        working-directory: ./backend
-        run: |
-          npm test
+    - name: Run unit tests for backend
+      run: |
+        cd backend
+        npm test
 
-      - name: Run Unit Tests - Frontend
-        working-directory: ./frontend
-        run: |
-          npm test
-
-      - name: Merge dev into main (if all tests pass)
-        if: success()  # Only if tests pass
-        run: |
-          git config --global user.name "github-actions[bot]"
-          git config --global user.email "github-actions[bot]@users.noreply.github.com"
-          git fetch origin
-          git checkout main
-          git merge dev --no-ff -m "CI/CD: Merging dev into main"
-          git push origin main
-
-  # Job for handling merge into main branch
-  build-test-and-deploy-on-main:
-    if: github.ref == 'refs/heads/main'
-    needs: build-and-test  # Ensures this job runs after build-and-test
+  # Job to build, test and deploy for the main branch
+  build_and_deploy_main:
     runs-on: ubuntu-latest
+    
     steps:
-      - name: Checkout Code
-        uses: actions/checkout@v3
+    - name: Checkout code
+      uses: actions/checkout@v3
 
-      - name: Set up Node.js
-        uses: actions/setup-node@v3
-        with:
-          node-version: '18'
+    - name: Set up Node.js for frontend and backend
+      uses: actions/setup-node@v3
+      with:
+        node-version: '16'  # or specify the version you need
 
-      - name: Install Dependencies - Backend
-        working-directory: ./backend
-        run: |
-          npm install
+    - name: Install frontend dependencies
+      run: |
+        cd frontend
+        npm install
 
-      - name: Install Dependencies - Frontend
-        working-directory: ./frontend
-        run: |
-          npm install
+    - name: Install backend dependencies
+      run: |
+        cd backend
+        npm install
 
-      - name: Run Unit Tests - Backend
-        working-directory: ./backend
-        run: |
-          npm test
+    - name: Run unit tests for frontend
+      run: |
+        cd frontend
+        npm test
 
-      - name: Run Unit Tests - Frontend
-        working-directory: ./frontend
-        run: |
-          npm test
+    - name: Run unit tests for backend
+      run: |
+        cd backend
+        npm test
 
-      - name: Run E2E Tests
-        working-directory: ./e2e-tests
-        run: |
-          npm install
-          npm test
+    - name: Run E2E tests
+      run: |
+        cd e2e
+        npm install
+        npm run test
 
-      - name: Build Docker Images
-        run: |
-          docker-compose up --build -d
+    - name: Build Docker images using docker-compose
+      run: |
+        docker-compose -f docker-compose.yml build
 
-      - name: Push Docker Images to Docker Hub
-        uses: docker/login-action@v2
-        with:
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
-
-      - name: Push Docker Images
-        run: |
-          docker-compose push
-
-      - name: Clean up Docker
-        run: |
-          docker-compose down
+    - name: Push Docker images to Docker Hub
+      run: |
+        docker login -u ${{ secrets.DOCKER_USERNAME }} -p ${{ secrets.DOCKER_PASSWORD }}
+        docker-compose -f docker-compose.yml push
