@@ -71,7 +71,9 @@ jobs:
         run: |
           docker-compose up --build -d
           sleep 10 # Wait for services to initialize
-          npm run e2e # Replace with actual e2e test command
+          cd e2e-tests
+          npm install
+          npm test
           docker-compose down
 
       # Build and Test with Docker Compose
