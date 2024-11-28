@@ -15,8 +15,9 @@ services:
     build:
       context: ./backend
       dockerfile: Dockerfile
-    container_name: backend
+    image: nogayedieng/backend
     restart: always
+    container_name: backend
     ports:
       - "3001:3001"
     depends_on:
@@ -32,6 +33,7 @@ services:
       dockerfile: Dockerfile
       args:
         REACT_APP_API_URL: http://localhost:3001
+    image: nogayedieng/frontend
     container_name: frontend
     restart: always
     ports:
