@@ -91,8 +91,9 @@ jobs:
     - name: Run E2E tests
       run: |
         cd e2e-tests
-        npm install
-        npx mocha test.js
+        docker-compose up
+        npm test
+        docker-compse down
 
     - name: Build Docker images using docker-compose
       run: |
