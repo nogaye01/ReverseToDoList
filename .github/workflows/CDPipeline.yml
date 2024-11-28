@@ -1,50 +1,47 @@
-name: CD Pipeline
+name: CI/CD Pipeline
 
 on:
   push:
     branches:
       - dev
       - main
-  pull_request:
-    branches:
-      - dev
+
 jobs:
-  build-and-test:
-    name: Build and Test
+  # Job for handling merge into dev branch
+  build-and-test-on-dev:
+    if: github.ref == 'refs/heads/dev' && github.event.head_commit.message != 'Merge dev into main'
     runs-on: ubuntu-latest
     steps:
-      #  Checkout the code
-      - name: Checkout code
+      - name: Checkout Code
         uses: actions/checkout@v3
 
-      # Setup Node.js for frontend and backend
-      - name: Setup Node.js
+      - name: Set up Node.js
         uses: actions/setup-node@v3
         with:
-          node-version: 18
+          node-version: '18'  # Specify the Node.js version
 
-      #  Install and test Backend
-      - name: Install and Test Backend
+      - name: Install Dependencies - Backend
         working-directory: ./backend
         run: |
           npm install
-          npm test
 
-      #  Install and test Frontend
-      - name: Install and Test Frontend
+      - name: Install Dependencies - Frontend
         working-directory: ./frontend
         run: |
           npm install
+
+      - name: Run Unit Tests - Backend
+        working-directory: ./backend
+        run: |
           npm test
 
-  merge-to-main:
-    name: Merge Dev to Main
-    needs: build-and-test
-    if: github.ref == 'refs/heads/dev' && success()
-    runs-on: ubuntu-latest
-    steps:
-      # Merge dev into main branch
-      - name: Merge Dev into Main
+      - name: Run Unit Tests - Frontend
+        working-directory: ./frontend
+        run: |
+          npm test
+
+      - name: Merge dev into main (if all tests pass)
+        if: success()  # Only if tests pass
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
@@ -53,41 +50,60 @@ jobs:
           git merge dev --no-ff -m "CI/CD: Merging dev into main"
           git push origin main
 
-  e2e-and-deploy:
-    name: E2E Test and Deploy
-    needs: build-and-test
-    if: github.ref == 'refs/heads/main' || github.event.pull_request.base.ref == 'dev' && success()
+  # Job for handling merge into main branch
+  build-test-and-deploy-on-main:
+    if: github.ref == 'refs/heads/main'
+    needs: build-and-test-on-dev  # Ensures this job runs after build-and-test-on-dev
     runs-on: ubuntu-latest
     steps:
-      #  Checkout the code
-      - name: Checkout code
+      - name: Checkout Code
         uses: actions/checkout@v3
 
-      - name: Install Docker Compose
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y docker-compose
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
 
-      #   Build and Test with Docker Compose
-      - name: Build and Test with Docker Compose
+      - name: Install Dependencies - Backend
+        working-directory: ./backend
+        run: |
+          npm install
+
+      - name: Install Dependencies - Frontend
+        working-directory: ./frontend
+        run: |
+          npm install
+
+      - name: Run Unit Tests - Backend
+        working-directory: ./backend
+        run: |
+          npm test
+
+      - name: Run Unit Tests - Frontend
+        working-directory: ./frontend
+        run: |
+          npm test
+
+      - name: Run E2E Tests
         working-directory: ./e2e-tests
         run: |
-          docker-compose up --build -d
-          sleep 10 # Wait for services to initialize
           npm install
           npm test
-          docker-compose down
 
+      - name: Build Docker Images
+        run: |
+          docker-compose up --build -d
 
-
-      # Build and Push Docker Images
-      - name: Login to Docker Hub
+      - name: Push Docker Images to Docker Hub
         uses: docker/login-action@v2
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
-      - name: Build and Push Docker Images
+      - name: Push Docker Images
         run: |
-          docker-compose build
           docker-compose push
+
+      - name: Clean up Docker
+        run: |
+          docker-compose down
